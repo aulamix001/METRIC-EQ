@@ -1,0 +1,42 @@
+name: Publish Windows download
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/publish-windows-download.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: CHi-Metric-Match-Pro-Windows-x64
+          run-id: 43219767471
+          github-token: ${{ github.token }}
+          path: dist
+      - name: Verify and publish existing Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum -c SHA256SUMS.txt
+          unzip -t CHi-Metric-Match-Pro-Windows-x64.zip
+          cd ..
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch --orphan windows-downloads
+          cp dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt .
+          git add CHi-Metric-Match-Pro-Windows-x64.zip SHA256SUMS.txt
+          git commit -m 'Publish tested Windows x64 foundation build from run 43219767471'
+          git push origin HEAD:refs/heads/windows-downloads
+          mkdir downloaded
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/aulamix001/METRIC-EQ/windows-downloads/CHi-Metric-Match-Pro-Windows-x64.zip' -o downloaded/CHi-Metric-Match-Pro-Windows-x64.zip
+          cp SHA256SUMS.txt downloaded/
+          cd downloaded
+          sha256sum -c SHA256SUMS.txt
+          unzip -t CHi-Metric-Match-Pro-Windows-x64.zip
