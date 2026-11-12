@@ -25,6 +25,8 @@ O workflow `Windows VST3` recompila o commit selecionado em Release e Debug com 
 
 Um teste remoto só deve ser considerado aprovado após a conclusão daquela execução. `BUILD-INFO.json` vincula o ZIP ao código e ao binário. Este texto descreve o procedimento; os logs e o estado do workflow são a evidência do resultado.
 
+O primeiro ensaio Windows desta auditoria compilou Release/Debug, passou as três suítes e o pluginval escreveu `SUCCESS`, mas o workflow marcou erro porque a invocação direta do executável GUI retornou ao PowerShell antes de sua conclusão. `scripts/validate-windows.ps1` corrige a espera com `Process.WaitForExit`, captura stdout/stderr sem bloqueio e exige tanto código de saída 0 quanto confirmação `SUCCESS`. Uma nova execução completa verifica esse fluxo corrigido.
+
 ## Pacote e download
 
 Antes de publicar: validação PE x64 do binário, extração do ZIP e comparação de SHA256 do VST3. Depois de publicar: download por HTTPS e comparação de SHA256 do pacote. O arquivo é identificado pelo commit da branch de downloads. A disponibilidade futura do GitHub não é garantida por uma verificação pontual.

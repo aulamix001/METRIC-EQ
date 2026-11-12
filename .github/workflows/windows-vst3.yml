@@ -22,15 +22,7 @@ jobs:
           ./scripts/build-windows.ps1 -Configuration Debug
       - name: Validate VST3 with pluginval 1.0.4
         shell: pwsh
-        run: |
-          $url = 'https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_Windows.zip'
-          Invoke-WebRequest $url -OutFile pluginval.zip
-          if ((Get-FileHash pluginval.zip).Hash.ToLower() -ne 'c08e61ce3b96db41636f8ec7e76f4c7e2c13ebdac7fa1b5a1f52b4f32ec715ab') { throw 'pluginval checksum mismatch' }
-          Expand-Archive pluginval.zip pluginval
-          New-Item -ItemType Directory -Force build-windows/pluginval-logs | Out-Null
-          $plugin = (Resolve-Path 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3').Path
-          & ./pluginval/pluginval.exe --strictness-level 5 --random-seed 12345 --sample-rates '44100,48000,88200,96000,192000' --block-sizes '32,2048' --output-dir build-windows/pluginval-logs --validate $plugin
-          if ($LASTEXITCODE -ne 0) { throw 'pluginval failed; publication blocked' }
+        run: ./scripts/validate-windows.ps1
       - name: Package and verify Windows binary
         shell: pwsh
         run: ./scripts/package-windows.ps1
