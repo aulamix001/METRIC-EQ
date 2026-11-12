@@ -55,3 +55,17 @@ Insira como efeito em uma faixa mono ou estéreo. A saída preserva a entrada. B
 ## Licenciamento
 
 JUCE possui termos AGPLv3/comerciais próprios; revise `JUCE/LICENSE.md` antes de distribuir. A ausência de dependências comerciais obrigatórias não implica autorização para distribuir um produto fechado sem atender à licença JUCE. Nenhum código, marca ou asset proprietário da ADPTR é incluído.
+
+## Download Windows
+
+O workflow [Windows VST3](https://github.com/aulamix001/METRIC-EQ/actions/workflows/windows-vst3.yml) compila Release e Debug no Windows Server 2022 x64, executa os testes e publica uma pré-release somente após validar o pacote. Consulte as [Releases](https://github.com/aulamix001/METRIC-EQ/releases) e a conclusão do workflow: a presença deste texto não confirma que um build remoto já terminou.
+
+Baixe `CHi-Metric-Match-Pro-Windows-x64.zip` e `SHA256SUMS.txt` da mesma release. Compare `Get-FileHash .\CHi-Metric-Match-Pro-Windows-x64.zip -Algorithm SHA256` com o hash publicado. Extraia o ZIP e copie a pasta completa `CHi Metric Match Pro.vst3` para `C:\Program Files\Common Files\VST3\CHi Audio\`, sem substituir versões existentes. O binário não é assinado. A funcionalidade entregue ainda é a Fase 1.
+
+O workflow também baixa o ZIP do GitHub e compara os hashes do arquivo e do VST3 extraído. Isso verifica a integridade naquela execução; não garante disponibilidade futura do GitHub ou compatibilidade com todas as DAWs.
+
+## Interface atual
+
+Renderização do editor JUCE real em Linux; não é uma captura dentro do Studio One.
+
+![Interface da Fase 1](docs/plugin-phase1.png)

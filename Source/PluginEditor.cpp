@@ -16,7 +16,7 @@ void MetricEditor::paint(juce::Graphics& g) {
  g.setColour(juce::Colour(0xff65b7e8)); g.setFont(30.0f);
  g.drawText("A  /  MIX INPUT", 60, 130, getWidth()-120, 50, juce::Justification::centred);
  g.setColour(juce::Colour(0xffd5d8de)); g.setFont(18.0f);
- g.drawText("Foundation • unity gain pass-through", 60, 195, getWidth()-120, 40, juce::Justification::centred);
+ g.drawText("Foundation / unity gain pass-through", 60, 195, getWidth()-120, 40, juce::Justification::centred);
  g.setFont(15.0f);
  g.drawText("Spectrum, reference playback and EQ Match are pending implementation.", 60, 250, getWidth()-120, 60, juce::Justification::centred);
  g.drawText("CHi Audio   /   0.1.0   /   PHASE 1", 30, getHeight()-50, getWidth()-60, 25, juce::Justification::centredLeft);
