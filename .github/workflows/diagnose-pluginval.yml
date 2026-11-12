@@ -1,0 +1,27 @@
+name: Diagnose pluginval
+on:
+  push:
+    branches: [diagnose-pluginval]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve failed validator step
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run view 43227761459 --job 131215708246 --log-failed > "$RUNNER_TEMP/pluginval-windows.log"
+          test -s "$RUNNER_TEMP/pluginval-windows.log"
+          git switch --orphan validation-logs
+          cp "$RUNNER_TEMP/pluginval-windows.log" ./
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pluginval-windows.log
+          git commit -m 'Capture failed Windows pluginval step for run 43227761459'
+          git push origin HEAD:validation-logs
