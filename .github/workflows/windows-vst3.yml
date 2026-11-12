@@ -1,0 +1,69 @@
+name: Windows VST3
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test Release and Debug
+        shell: pwsh
+        run: |
+          ./scripts/build-windows.ps1 -Configuration Release
+          ./scripts/build-windows.ps1 -Configuration Debug
+      - name: Package and verify extracted Windows binary
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $bundle = 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3'
+          $binary = Join-Path $bundle 'Contents/x86_64-win/CHi Metric Match Pro.vst3'
+          if (!(Test-Path $binary)) { throw 'Windows VST3 binary missing' }
+          $bytes = [IO.File]::ReadAllBytes((Resolve-Path $binary))
+          if ($bytes[0] -ne 0x4d -or $bytes[1] -ne 0x5a) { throw 'Not a Windows PE binary' }
+          $pe = [BitConverter]::ToInt32($bytes, 0x3c)
+          if ([BitConverter]::ToUInt32($bytes, $pe) -ne 0x4550 -or [BitConverter]::ToUInt16($bytes, $pe + 4) -ne 0x8664) { throw 'Not PE x64' }
+          $zip = 'dist/CHi-Metric-Match-Pro-Windows-x64.zip'
+          Compress-Archive -LiteralPath $bundle -DestinationPath $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath verify
+          $restored = 'verify/CHi Metric Match Pro.vst3/Contents/x86_64-win/CHi Metric Match Pro.vst3'
+          if ((Get-FileHash $binary).Hash -ne (Get-FileHash $restored).Hash) { throw 'ZIP round-trip failed' }
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  CHi-Metric-Match-Pro-Windows-x64.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+          Copy-Item README.md,VALIDATION.md dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CHi-Metric-Match-Pro-Windows-x64
+          path: dist/*
+          if-no-files-found: error
+      - name: Publish immutable prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'foundation-${{ github.run_number }}-${{ github.run_attempt }}'
+          gh release create $tag dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt --target '${{ github.sha }}' --prerelease --title "CHi Metric Match Pro - Foundation ${{ github.run_number }}" --notes 'Phase 1 only: unity pass-through, bypass, saved state and initial editor. Windows x64 Release; automated tests also run in Debug. Reference playback, FFT and EQ Match are pending. Not validated in Studio One or REAPER. Unsigned binary.'
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
+          $release = gh release view $tag --json assets | ConvertFrom-Json
+          $asset = $release.assets | Where-Object name -eq 'CHi-Metric-Match-Pro-Windows-x64.zip'
+          $url = $asset.url
+          New-Item -ItemType Directory -Force downloaded | Out-Null
+          gh release download $tag --pattern '*.zip' --dir downloaded
+          if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
+          $local = (Get-FileHash dist/CHi-Metric-Match-Pro-Windows-x64.zip).Hash
+          if ((Get-FileHash downloaded/CHi-Metric-Match-Pro-Windows-x64.zip).Hash -ne $local) { throw 'Downloaded SHA256 mismatch' }
+          Expand-Archive downloaded/CHi-Metric-Match-Pro-Windows-x64.zip downloaded/unpacked
+          if ((Get-FileHash 'downloaded/unpacked/CHi Metric Match Pro.vst3/Contents/x86_64-win/CHi Metric Match Pro.vst3').Hash -ne (Get-FileHash 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3/Contents/x86_64-win/CHi Metric Match Pro.vst3').Hash) { throw 'Downloaded VST3 mismatch' }
+          "Download from GitHub verified (SHA256): $local" >> $env:GITHUB_STEP_SUMMARY
+      - name: Retain logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-logs
+          path: |
+            build-windows/*.log
+            build-windows/Testing/Temporary/*.log
