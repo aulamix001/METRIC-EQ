@@ -1,8 +1,13 @@
 #include "PluginEditor.h"
 MetricEditor::MetricEditor(MetricProcessor& p) : AudioProcessorEditor(p), attachment(p.state, "bypass", bypass) {
  addAndMakeVisible(bypass);
+ bypass.setComponentID("bypass");
+ bypass.setName("Bypass");
  bypass.setColour(juce::ToggleButton::textColourId, juce::Colour(0xffd5d8de));
  setResizable(true, true); setResizeLimits(800, 480, 1800, 1080); setSize(1200, 720);
+}
+int MetricEditor::getControlParameterIndex(juce::Component& component) {
+ return &component == &bypass ? getAudioProcessor()->getBypassParameter()->getParameterIndex() : -1;
 }
 void MetricEditor::resized() { bypass.setBounds(getWidth() - 150, 24, 120, 32); }
 void MetricEditor::paint(juce::Graphics& g) {

@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: windows-vst3-publication
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: windows-2022
@@ -17,50 +20,38 @@ jobs:
         run: |
           ./scripts/build-windows.ps1 -Configuration Release
           ./scripts/build-windows.ps1 -Configuration Debug
-      - name: Package and verify extracted Windows binary
+      - name: Validate VST3 with pluginval 1.0.4
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force dist | Out-Null
-          $bundle = 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3'
-          $binary = Join-Path $bundle 'Contents/x86_64-win/CHi Metric Match Pro.vst3'
-          if (!(Test-Path $binary)) { throw 'Windows VST3 binary missing' }
-          $bytes = [IO.File]::ReadAllBytes((Resolve-Path $binary))
-          if ($bytes[0] -ne 0x4d -or $bytes[1] -ne 0x5a) { throw 'Not a Windows PE binary' }
-          $pe = [BitConverter]::ToInt32($bytes, 0x3c)
-          if ([BitConverter]::ToUInt32($bytes, $pe) -ne 0x4550 -or [BitConverter]::ToUInt16($bytes, $pe + 4) -ne 0x8664) { throw 'Not PE x64' }
-          $zip = 'dist/CHi-Metric-Match-Pro-Windows-x64.zip'
-          Compress-Archive -LiteralPath $bundle -DestinationPath $zip
-          Expand-Archive -LiteralPath $zip -DestinationPath verify
-          $restored = 'verify/CHi Metric Match Pro.vst3/Contents/x86_64-win/CHi Metric Match Pro.vst3'
-          if ((Get-FileHash $binary).Hash -ne (Get-FileHash $restored).Hash) { throw 'ZIP round-trip failed' }
-          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-          "$hash  CHi-Metric-Match-Pro-Windows-x64.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
-          Copy-Item README.md,VALIDATION.md dist/
+          $url = 'https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_Windows.zip'
+          Invoke-WebRequest $url -OutFile pluginval.zip
+          if ((Get-FileHash pluginval.zip).Hash.ToLower() -ne 'c08e61ce3b96db41636f8ec7e76f4c7e2c13ebdac7fa1b5a1f52b4f32ec715ab') { throw 'pluginval checksum mismatch' }
+          Expand-Archive pluginval.zip pluginval
+          New-Item -ItemType Directory -Force build-windows/pluginval-logs | Out-Null
+          $plugin = (Resolve-Path 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3').Path
+          & ./pluginval/pluginval.exe --strictness-level 5 --random-seed 12345 --sample-rates '44100,48000,88200,96000,192000' --block-sizes '32,2048' --output-dir build-windows/pluginval-logs --validate $plugin
+          if ($LASTEXITCODE -ne 0) { throw 'pluginval failed; publication blocked' }
+      - name: Package and verify Windows binary
+        shell: pwsh
+        run: ./scripts/package-windows.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: CHi-Metric-Match-Pro-Windows-x64
-          path: dist/*
+          path: |
+            dist/*.zip
+            dist/*.txt
+            dist/*.json
           if-no-files-found: error
       - name: Publish immutable prerelease
+        continue-on-error: true
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = 'foundation-${{ github.run_number }}-${{ github.run_attempt }}'
-          gh release create $tag dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt --target '${{ github.sha }}' --prerelease --title "CHi Metric Match Pro - Foundation ${{ github.run_number }}" --notes 'Phase 1 only: unity pass-through, bypass, saved state and initial editor. Windows x64 Release; automated tests also run in Debug. Reference playback, FFT and EQ Match are pending. Not validated in Studio One or REAPER. Unsigned binary.'
-          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
-          $release = gh release view $tag --json assets | ConvertFrom-Json
-          $asset = $release.assets | Where-Object name -eq 'CHi-Metric-Match-Pro-Windows-x64.zip'
-          $url = $asset.url
-          New-Item -ItemType Directory -Force downloaded | Out-Null
-          gh release download $tag --pattern '*.zip' --dir downloaded
-          if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
-          $local = (Get-FileHash dist/CHi-Metric-Match-Pro-Windows-x64.zip).Hash
-          if ((Get-FileHash downloaded/CHi-Metric-Match-Pro-Windows-x64.zip).Hash -ne $local) { throw 'Downloaded SHA256 mismatch' }
-          Expand-Archive downloaded/CHi-Metric-Match-Pro-Windows-x64.zip downloaded/unpacked
-          if ((Get-FileHash 'downloaded/unpacked/CHi Metric Match Pro.vst3/Contents/x86_64-win/CHi Metric Match Pro.vst3').Hash -ne (Get-FileHash 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3/Contents/x86_64-win/CHi Metric Match Pro.vst3').Hash) { throw 'Downloaded VST3 mismatch' }
-          "Download from GitHub verified (SHA256): $local" >> $env:GITHUB_STEP_SUMMARY
-      - name: Retain logs
+          $tag = 'audited-foundation-${{ github.run_number }}-${{ github.run_attempt }}'
+          gh release create $tag dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt dist/BUILD-INFO.json --target '${{ github.sha }}' --prerelease --title 'CHi Metric Match Pro - Audited Foundation' --notes 'FOUNDATION ONLY. Implemented: unity pass-through, mapped bypass, saved state, initial editor. Tests in Release/Debug and pluginval strictness 5. A/B, reference playback, gains, filters, FFT, loudness, EQ Match and the concept UI are NOT implemented. See AUDIT.md inside ZIP. Not tested in Studio One or REAPER. Unsigned binary.'
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Releases unavailable; downloads branch will still be published' }
+      - name: Retain validation logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -68,3 +59,32 @@ jobs:
           path: |
             build-windows/*.log
             build-windows/Testing/Temporary/*.log
+            build-windows/pluginval-logs/*
+      - name: Publish verified downloads branch
+        shell: pwsh
+        run: |
+          $source = '${{ github.sha }}'
+          $staged = Join-Path $env:RUNNER_TEMP 'metric-download-files'
+          New-Item -ItemType Directory -Force $staged | Out-Null
+          Copy-Item dist/*.zip,dist/*.txt,dist/*.json $staged/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin windows-downloads
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch downloads branch' }
+          git switch --create windows-downloads --track origin/windows-downloads
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot switch to downloads branch' }
+          Copy-Item "$staged/*" ./ -Force
+          git add CHi-Metric-Match-Pro-Windows-x64.zip SHA256SUMS.txt BUILD-INFO.json
+          git commit -m "Publish audited Windows foundation from $source"
+          if ($LASTEXITCODE -ne 0) { throw 'Downloads commit failed' }
+          git push origin HEAD:windows-downloads
+          if ($LASTEXITCODE -ne 0) { throw 'Downloads publication failed' }
+          $commit = (git rev-parse HEAD).Trim()
+          $url = "https://raw.githubusercontent.com/${{ github.repository }}/$commit/CHi-Metric-Match-Pro-Windows-x64.zip"
+          $download = Join-Path $env:RUNNER_TEMP 'verified-download.zip'
+          curl.exe --fail --location --retry 3 --output $download $url
+          if ($LASTEXITCODE -ne 0) { throw 'Published ZIP download failed' }
+          $expected = (Get-Content SHA256SUMS.txt).Split(' ')[0]
+          if ((Get-FileHash $download).Hash.ToLower() -ne $expected) { throw 'Published download checksum mismatch' }
+          Expand-Archive $download (Join-Path $env:RUNNER_TEMP 'verified-download')
+          "Verified download: $url`nSHA256: $expected`nSource: $source" >> $env:GITHUB_STEP_SUMMARY
