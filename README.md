@@ -30,7 +30,14 @@ O VST3 aceita mono e estéreo. O adaptador VST2 usa duas entradas e duas saídas
 
 ## Downloads e instalação no Windows
 
-Pacotes são publicados em [Releases](https://github.com/aulamix001/METRIC-EQ/releases) e na [branch windows-downloads](https://github.com/aulamix001/METRIC-EQ/tree/windows-downloads) somente após testes. Confira `BUILD-INFO.json`: deve indicar versão **0.2.0** e 37 parâmetros; a versão 0.1 tinha apenas Bypass e a tela de fundação.
+Downloads verificados da **0.2.0**, Windows x64:
+
+- [Baixar VST3](https://raw.githubusercontent.com/aulamix001/METRIC-EQ/6461815e6c684b74d5bc6d4115f3e3282339db53/CHi-Metric-Match-Pro-VST3-Windows-x64.zip)
+- [Baixar VST2](https://raw.githubusercontent.com/aulamix001/METRIC-EQ/6461815e6c684b74d5bc6d4115f3e3282339db53/CHi-Metric-Match-Pro-VST2-Windows-x64.zip)
+- [Baixar os dois formatos](https://raw.githubusercontent.com/aulamix001/METRIC-EQ/6461815e6c684b74d5bc6d4115f3e3282339db53/CHi-Metric-Match-Pro-Windows-x64.zip)
+- [Comprovante, hashes e execução dos testes](docs/BUILD-RECEIPT.md)
+
+Esses links usam o commit imutável da publicação conferida. Os pacotes também são publicados em [Releases](https://github.com/aulamix001/METRIC-EQ/releases) e na [branch windows-downloads](https://github.com/aulamix001/METRIC-EQ/tree/windows-downloads) somente após testes. Confira `BUILD-INFO.json`: deve indicar versão **0.2.0** e 37 parâmetros; a versão 0.1 tinha apenas Bypass e a tela de fundação.
 
 - `CHi-Metric-Match-Pro-VST3-Windows-x64.zip`: copie a pasta completa `CHi Metric Match Pro.vst3` para sua pasta VST3.
 - `CHi-Metric-Match-Pro-VST2-Windows-x64.zip`: copie `CHi Metric Match Pro.dll` para uma pasta VST2 configurada na DAW.

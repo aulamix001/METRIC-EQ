@@ -9,13 +9,15 @@
 5. `monitor_filters`: resposta conhecida do low-pass, 12 combinações região/inclinação, automação e sanitização NaN/Inf.
 6. `spectrum_calibration`: senoide calibrada no caminho FIFO → Hann → FFT do editor, magnitude esperada em dBFS e ausência de sinal fictício em B silencioso.
 
-Os comandos cloud compilam e executam CTest em Release/Debug. Logs locais: `/workspace/tools/core-build.log`, `/workspace/tools/core-debug-build.log`. pluginval 1.0.4 nível 5 é executado separadamente para VST3 e para o adaptador VST2; no Linux, com Xvfb. Logs locais: `/workspace/tools/pluginval/v02-vst3.log` e `v02-vst2.log`.
+Os comandos cloud compilam e executam CTest em Release/Debug. Logs locais finais: `/workspace/tools/core-release-final.log`, `/workspace/tools/core-debug-final.log`. pluginval 1.0.4 nível 5 é executado separadamente para VST3 e para o adaptador VST2; no Linux, com Xvfb. Logs locais: `/workspace/tools/pluginval/v02-vst3.log` e `v02-vst2.log`.
 
 ## Windows e publicação
 
 O workflow recompila em Visual Studio 2022 x64, roda as seis suítes em Release e Debug e executa pluginval nos dois formatos. O validador Windows é aguardado explicitamente com Process.WaitForExit: não se interpreta o LASTEXITCODE antes de um executável GUI terminar.
 
 O empacotamento exige dois binários PE x64 diferentes, registra seus hashes e o inventário real em BUILD-INFO.json, extrai o ZIP e compara os dois arquivos. Publicação e download são verificados por SHA256. Logs de uma execução anterior não certificam o commit atual; confira o sourceCommit no manifesto.
+
+O [comprovante 0.2.0](docs/BUILD-RECEIPT.md) identifica o commit compilado, a execução Windows bem-sucedida e os três pacotes que foram baixados e verificados após publicação.
 
 ## Interface capturada
 
