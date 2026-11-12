@@ -1,6 +1,6 @@
 {
   "version": "0.2.0",
-  "sourceCommit": "b54095ed49cd284ec454074ac1c4888e36c67fab",
+  "sourceCommit": "6f308ae794b972ccd61e4335ba03e9f4a6f15046",
   "platform": "Windows x64",
   "configuration": "Release",
   "productStage": "Reference comparison: real editor, A/B RAM player, FFT, filters, monitors; advanced mastering features pending",
@@ -302,8 +302,8 @@
       "defaultNormalized": 0.444444447755814
     }
   ],
-  "binarySha256": "1ad0d1f0d8b48f34ae320a06a5db7a77bce9a2ec2a4416946d4892e0d2abb34e",
-  "vst2Sha256": "dead50d4039657565095a634654003a39f65af04ce9e76c8dea19ebe82067aed",
+  "binarySha256": "ac9cca997d3c985097660f25f6681bad28ba60a356bfa35411ecac3c460742a8",
+  "vst2Sha256": "b3faa896baa86ebb538907274d5ebcc3256dc2eaf299a0dbac97f5c15ce1eb2e",
   "automatedTests": [
     "foundation",
     "parameter_mapping",
