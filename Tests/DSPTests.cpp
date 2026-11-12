@@ -13,6 +13,7 @@ int main(int argc, char** argv) {
    juce::File target = juce::File::getCurrentWorkingDirectory().getChildFile(argv[2]);
    juce::FileOutputStream output(target);
    require(output.openedOk(), "Cannot open screenshot file");
+   require(output.setPosition(0) && output.truncate().wasOk(), "Cannot reset screenshot file");
    require(juce::PNGImageFormat().writeImageToStream(image, output), "Cannot encode screenshot");
    std::cout << "Actual JUCE editor rendered to " << target.getFullPathName() << "\n";
    return 0;
