@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "c6ed14f2ec08b44868425c5e493e9b0f0d6d2a25",
+  "platform": "Windows x64",
+  "configuration": "Release",
+  "productStage": "Foundation only: no reference player, analysis or EQ Match",
+  "parameters": [
+    {
+      "id": "bypass",
+      "name": "Bypass",
+      "index": 0,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    }
+  ],
+  "binarySha256": "80c55683d608e840e1de5b5d944c0d7bd6c65299fca90e8642f6a2e1fa00f5f7",
+  "automatedTests": [
+    "foundation",
+    "parameter_mapping",
+    "lifecycle"
+  ],
+  "pluginval": "1.0.4, strictness 5; see workflow logs"
+}
