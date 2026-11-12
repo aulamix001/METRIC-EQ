@@ -220,6 +220,7 @@ juce::ComboBox &MetricEditor::combo(const juce::String &id, juce::Rectangle<int>
 MetricEditor::MetricEditor(MetricProcessor &p)
     : AudioProcessorEditor(p), panel(*this), processor(p) {
     setLookAndFeel(&style);
+    panel.setComponentID("content");
     addAndMakeVisible(panel);
     setResizable(true, true);
     setResizeLimits(960, 576, 1920, 1152);
@@ -498,7 +499,7 @@ void MetricEditor::graphMouse(const juce::MouseEvent &e, bool drag) {
                     meterHold[static_cast<size_t>(s)][static_cast<size_t>(c)] = 0;
             }
     }
-    auto r = juce::Rectangle<float>(286, 104, 896, 395);
+    auto r = juce::Rectangle<float>(287, 108, 900, 391);
     if (!r.contains(e.position))
         return;
     if (processor.value("tab") < .5f) {
@@ -527,8 +528,15 @@ void MetricEditor::graphMouse(const juce::MouseEvent &e, bool drag) {
         processor.set("high", 20000);
         return;
     }
-    const float centre =
-        minHz() * std::pow(maxHz() / minHz(), (e.position.x - r.getX()) / r.getWidth());
+    const int page = juce::roundToInt(processor.value("tab"));
+    if (page == 4)
+        return;
+    auto plot = r.reduced(12, 10).withTrimmedBottom(18);
+    const float normalized =
+        juce::jlimit(0.0f, 1.0f,
+                     page == 3 ? (plot.getBottom() - e.position.y) / plot.getHeight()
+                               : (e.position.x - plot.getX()) / plot.getWidth());
+    const float centre = minHz() * std::pow(maxHz() / minHz(), normalized);
     float ratio = drag ? processor.value("high") / juce::jmax(20.0f, processor.value("low")) : 4;
     processor.set("low", juce::jlimit(20.0f, 20000.0f, centre / std::sqrt(ratio)));
     processor.set("high", juce::jlimit(20.0f, 20000.0f, centre * std::sqrt(ratio)));
@@ -544,6 +552,8 @@ void MetricEditor::configureFFT() {
     window = std::make_unique<juce::dsp::WindowingFunction<float>>(
         static_cast<size_t>(fftSize), juce::dsp::WindowingFunction<float>::hann, false);
     for (auto &data : frame)
+        data.assign(static_cast<size_t>(fftSize * 2), 0);
+    for (auto &data : fftWork)
         data.assign(static_cast<size_t>(fftSize * 2), 0);
     for (int s = 0; s < 2; ++s) {
         for (auto &curve : curves[static_cast<size_t>(s)])
@@ -568,20 +578,23 @@ void MetricEditor::resetAnalysis() {
     panel.repaint();
 }
 void MetricEditor::transformFrame() {
-    for (auto &data : frame) {
+    for (size_t c = 0; c < 4; ++c) {
+        auto &data = fftWork[c];
+        std::copy_n(frame[c].begin(), fftSize, data.begin());
         window->multiplyWithWindowingTable(data.data(), static_cast<size_t>(fftSize));
         std::fill(data.begin() + fftSize, data.end(), 0);
         fft->performRealOnlyForwardTransform(data.data(), true);
     }
-    const float dt = static_cast<float>(fftSize / processor.currentRate.load()),
+    const float dt = static_cast<float>(juce::jmin(2048, fftSize / 4) /
+                                        processor.currentRate.load()),
                 time = processor.value("averageTime") * .001f,
                 alpha = time <= 0 ? 1.0f / static_cast<float>(++analyzedFrames)
                                   : 1 - std::exp(-dt / time);
     for (int s = 0; s < 2; ++s)
         for (int i = 0; i <= fftSize / 2; ++i) {
             const auto bin = static_cast<size_t>(i), j = static_cast<size_t>(i * 2);
-            auto &l = frame[static_cast<size_t>(s * 2)];
-            auto &r = frame[static_cast<size_t>(s * 2 + 1)];
+            auto &l = fftWork[static_cast<size_t>(s * 2)];
+            auto &r = fftWork[static_cast<size_t>(s * 2 + 1)];
             const float pl = l[j] * l[j] + l[j + 1] * l[j + 1],
                         pr = r[j] * r[j] + r[j + 1] * r[j + 1],
                         normal = i == 0 ? 2.0f / fftSize : 4.0f / fftSize;
@@ -635,7 +648,11 @@ void MetricEditor::timerCallback() {
                     processor.analysis[c][static_cast<size_t>(source)];
             if (++framePosition == fftSize) {
                 transformFrame();
-                framePosition = 0;
+                const int hop = juce::jmin(2048, fftSize / 4);
+                for (auto &data : frame)
+                    std::memmove(data.data(), data.data() + hop,
+                                 static_cast<size_t>(fftSize - hop) * sizeof(float));
+                framePosition = fftSize - hop;
             }
         }
     processor.analysisFifo.finishedRead(n1 + n2);
@@ -958,15 +975,43 @@ void MetricEditor::draw(juce::Graphics &g) {
             drawGraph(g, graph, selected, type);
     }
 
-    if (type != 0 && type != 3 && processor.value("filters") > .5f) {
-        float low = juce::jmin(processor.value("low"), processor.value("high")),
-              high = juce::jmax(processor.value("low"), processor.value("high"));
-        float x1 = 299 + std::log(low / minHz()) / std::log(maxHz() / minHz()) * 876,
-              x2 = 299 + std::log(high / minHz()) / std::log(maxHz() / minHz()) * 876;
-        g.setColour(silver.withAlpha(.07f));
-        g.fillRect(x1, 118.f, juce::jmax(1.f, x2 - x1), 353.f);
-        g.setColour(silver.withAlpha(.4f));
-        g.drawRect(x1, 118.f, juce::jmax(1.f, x2 - x1), 353.f, 1.f);
+    if (type >= 1 && type <= 3 && processor.value("filters") > .5f) {
+        const float low = juce::jmin(processor.value("low"), processor.value("high"));
+        const float high = juce::jmax(processor.value("low"), processor.value("high"));
+        const int region = juce::roundToInt(processor.value("filterMode"));
+        const int panels = display == 1 ? 2 : 1;
+        for (int i = 0; i < panels; ++i) {
+            auto area = graph;
+            if (panels == 2) {
+                if (type == 3)
+                    area = graph.withWidth(graph.getWidth() * .5f)
+                               .translated(i * graph.getWidth() * .5f, 0);
+                else
+                    area = graph.withHeight(graph.getHeight() * .5f)
+                               .translated(0, i * graph.getHeight() * .5f);
+            }
+            auto plot = area.reduced(12, 10).withTrimmedBottom(18);
+            float l = juce::jlimit(0.f, 1.f, std::log(low / minHz()) / std::log(maxHz() / minHz()));
+            float h =
+                juce::jlimit(0.f, 1.f, std::log(high / minHz()) / std::log(maxHz() / minHz()));
+            if (region == 0) {
+                h = l;
+                l = 0;
+            } else if (region == 2) {
+                l = h;
+                h = 1;
+            }
+            auto band =
+                type == 3
+                    ? juce::Rectangle<float>(plot.getX(), plot.getBottom() - h * plot.getHeight(),
+                                             plot.getWidth(), (h - l) * plot.getHeight())
+                    : juce::Rectangle<float>(plot.getX() + l * plot.getWidth(), plot.getY(),
+                                             (h - l) * plot.getWidth(), plot.getHeight());
+            g.setColour(silver.withAlpha(.07f));
+            g.fillRect(band);
+            g.setColour(silver.withAlpha(.4f));
+            g.drawRect(band, 1.f);
+        }
     }
     uiText(g, "A MIX", {302, 115, 70, 16}, 10, blue);
     uiText(g, "B REFERENCE", {374, 115, 130, 16}, 10, amber);

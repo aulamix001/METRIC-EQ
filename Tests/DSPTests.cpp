@@ -331,7 +331,31 @@ void testAnalysis() {
             "Hann FFT normalization wrong");
     require(editor->spectrumDb(1, frequency) < -100,
             "Silent reference must not fabricate spectrum");
-    std::cout << "PASS: real FIFO/FFT path, calibrated sine magnitude and silent B spectrum.\n";
+    auto *content = findControl(*editor, "content");
+    require(content != nullptr, "Main interactive panel missing");
+    auto click = [&](juce::Point<float> point, int modifiers, int count = 1) {
+        auto now = juce::Time::getCurrentTime();
+        juce::MouseEvent event(juce::Desktop::getInstance().getMainMouseSource(), point,
+                               juce::ModifierKeys(modifiers), 1, 0, 0, 0, 0, content, content, now,
+                               point, now, count, false);
+        content->mouseDown(event);
+    };
+    p.set("tab", 1);
+    click({737, 290}, juce::ModifierKeys::leftButtonModifier);
+    require(std::abs(p.value("low") - 316.23f) < 1 && std::abs(p.value("high") - 1264.91f) < 1,
+            "Spot frequency must match graph position");
+    click({737, 290}, juce::ModifierKeys::rightButtonModifier);
+    require(p.value("filters") == 0, "Graph right-click bypass failed");
+    p.set("tab", 3);
+    click({500, 294.5f}, juce::ModifierKeys::leftButtonModifier);
+    require(std::abs(p.value("low") - 316.23f) < 1,
+            "Stereo Image Spot must use the vertical frequency axis");
+    click({737, 290}, juce::ModifierKeys::leftButtonModifier | juce::ModifierKeys::altModifier);
+    require(p.value("low") == 20 && p.value("high") == 20000, "Alt-click full-range reset failed");
+    click({137, 180}, juce::ModifierKeys::leftButtonModifier, 2);
+    require(p.value("meterZoom") == 1, "Meter double-click zoom failed");
+    std::cout << "PASS: real FIFO/FFT path, calibrated sine magnitude, silent B, graph Spot, "
+                 "bypass/reset and meter zoom gestures.\n";
 }
 void snapshotSignal(const juce::String &path) {
     const auto file = juce::File::getSpecialLocation(juce::File::tempDirectory)

@@ -117,8 +117,8 @@ bool MetricProcessor::isBusesLayoutSupported(const BusesLayout &layout) const {
 void MetricProcessor::FilterBank::configure(double rate, double low, double high, int mode,
                                             int slope) {
     count = 0;
-    low = juce::jlimit(5.0, rate * .45, low);
-    high = juce::jlimit(low, rate * .45, high);
+    low = juce::jlimit(5.0, rate * .49, low);
+    high = juce::jlimit(low, rate * .49, high);
     const std::array<std::array<double, 4>, 4> q{{{{.70710678, 0, 0, 0}},
                                                   {{.5411961, 1.306563, 0, 0}},
                                                   {{.517638, .70710678, 1.931852, 0}},

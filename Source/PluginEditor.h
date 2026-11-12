@@ -95,7 +95,7 @@ class MetricEditor final : public juce::AudioProcessorEditor, private juce::Time
     std::unique_ptr<juce::FileChooser> chooser;
     std::unique_ptr<juce::dsp::FFT> fft;
     std::unique_ptr<juce::dsp::WindowingFunction<float>> window;
-    std::array<std::vector<float>, 4> frame;
+    std::array<std::vector<float>, 4> frame, fftWork;
     std::array<std::array<std::vector<float>, 2>, 2> curves; // stream, current/average
     std::array<std::vector<float>, 2> held, holdAge, powerAverage, pan, phase;
     std::array<std::array<float, 2>, 2> meterPeak{}, meterRms{}, meterHold{};
