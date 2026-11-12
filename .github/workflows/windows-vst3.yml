@@ -8,7 +8,7 @@ permissions:
   contents: write
 concurrency:
   group: windows-vst3-publication
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: windows-2022
@@ -49,7 +49,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = 'audited-foundation-${{ github.run_number }}-${{ github.run_attempt }}'
-          gh release create $tag dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt dist/BUILD-INFO.json --target '${{ github.sha }}' --prerelease --title 'CHi Metric Match Pro - Audited Foundation' --notes 'FOUNDATION ONLY. Implemented: unity pass-through, mapped bypass, saved state, initial editor. Tests in Release/Debug and pluginval strictness 5. A/B, reference playback, gains, filters, FFT, loudness, EQ Match and the concept UI are NOT implemented. See AUDIT.md inside ZIP. Not tested in Studio One or REAPER. Unsigned binary.'
+          gh release create $tag dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt dist/BUILD-INFO.json --target '${{ github.sha }}' --prerelease --title 'CHi Metric Match Pro - Audited Foundation' --notes 'FOUNDATION ONLY. Implemented: unity pass-through, mapped bypass, saved state, initial editor. Tests in Release/Debug and pluginval strictness 5. A/B, reference playback, gains, filters, FFT, loudness, EQ Match and the concept UI are NOT implemented. See docs/AUDIT.md inside ZIP. Not tested in Studio One or REAPER. Unsigned binary.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Releases unavailable; downloads branch will still be published' }
       - name: Retain validation logs
         if: always()

@@ -20,7 +20,8 @@ try {
  if ($LASTEXITCODE -ne 0) { throw 'Cannot identify source commit' }
  New-Item -ItemType Directory -Force dist/staging | Out-Null
  Copy-Item $bundle dist/staging/ -Recurse
- Copy-Item README.md,VALIDATION.md,docs/AUDIT.md dist/staging/
+ Copy-Item README.md,VALIDATION.md dist/staging/
+ Copy-Item docs dist/staging/ -Recurse
  [ordered]@{
   sourceCommit = $commit
   platform = 'Windows x64'
