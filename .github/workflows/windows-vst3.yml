@@ -67,7 +67,7 @@ jobs:
           git switch --create windows-downloads --track origin/windows-downloads
           if ($LASTEXITCODE -ne 0) { throw 'Cannot switch to downloads branch' }
           Copy-Item "$staged/*" ./ -Force
-          git add "*.zip" SHA256SUMS.txt BUILD-INFO.json
+          git add -- CHi-Metric-Match-Pro-Windows-x64.zip CHi-Metric-Match-Pro-VST3-Windows-x64.zip CHi-Metric-Match-Pro-VST2-Windows-x64.zip SHA256SUMS.txt BUILD-INFO.json
           git commit -m "Publish Windows reference comparison from $source"
           if ($LASTEXITCODE -ne 0) { throw 'Downloads commit failed' }
           git push origin HEAD:windows-downloads
