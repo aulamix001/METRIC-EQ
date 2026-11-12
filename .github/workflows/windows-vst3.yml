@@ -1,4 +1,4 @@
-name: Windows VST3
+name: Windows VST3 and VST2
 on:
   push:
     branches: [main]
@@ -40,8 +40,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = 'audited-foundation-${{ github.run_number }}-${{ github.run_attempt }}'
-          gh release create $tag dist/CHi-Metric-Match-Pro-Windows-x64.zip dist/SHA256SUMS.txt dist/BUILD-INFO.json --target '${{ github.sha }}' --prerelease --title 'CHi Metric Match Pro - Audited Foundation' --notes 'FOUNDATION ONLY. Implemented: unity pass-through, mapped bypass, saved state, initial editor. Tests in Release/Debug and pluginval strictness 5. A/B, reference playback, gains, filters, FFT, loudness, EQ Match and the concept UI are NOT implemented. See docs/AUDIT.md inside ZIP. Not tested in Studio One or REAPER. Unsigned binary.'
+          $tag = 'reference-v02-${{ github.run_number }}-${{ github.run_attempt }}'
+          $assets = @(Get-ChildItem dist/*.zip | ForEach-Object FullName)
+          gh release create $tag @assets dist/SHA256SUMS.txt dist/BUILD-INFO.json --target '${{ github.sha }}' --prerelease --title 'CHi Metric Match Pro 0.2 - Reference Comparison' --notes 'Real redesigned JUCE editor. VST3 and independent VST2-compatible adapter. Implemented: RAM reference library, A/B crossfade, gains, stereo monitoring, filters, FFT, correlation/stereo views and crest-factor history. LUFS/True Peak/PSR, EQ Match, disk streaming, PDC and full preset workflow remain pending. See included AUDIT.md. Windows tests and pluginval validate both formats. Not tested in Studio One or REAPER. Unsigned binaries.'
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Releases unavailable; downloads branch will still be published' }
       - name: Retain validation logs
         if: always()
@@ -66,8 +67,8 @@ jobs:
           git switch --create windows-downloads --track origin/windows-downloads
           if ($LASTEXITCODE -ne 0) { throw 'Cannot switch to downloads branch' }
           Copy-Item "$staged/*" ./ -Force
-          git add CHi-Metric-Match-Pro-Windows-x64.zip SHA256SUMS.txt BUILD-INFO.json
-          git commit -m "Publish audited Windows foundation from $source"
+          git add "*.zip" SHA256SUMS.txt BUILD-INFO.json
+          git commit -m "Publish Windows reference comparison from $source"
           if ($LASTEXITCODE -ne 0) { throw 'Downloads commit failed' }
           git push origin HEAD:windows-downloads
           if ($LASTEXITCODE -ne 0) { throw 'Downloads publication failed' }
@@ -76,7 +77,7 @@ jobs:
           $download = Join-Path $env:RUNNER_TEMP 'verified-download.zip'
           curl.exe --fail --location --retry 3 --output $download $url
           if ($LASTEXITCODE -ne 0) { throw 'Published ZIP download failed' }
-          $expected = (Get-Content SHA256SUMS.txt).Split(' ')[0]
+          $expected = ((Get-Content SHA256SUMS.txt | Where-Object {$_ -match "  CHi-Metric-Match-Pro-Windows-x64.zip$"}) -split "  ")[0]
           if ((Get-FileHash $download).Hash.ToLower() -ne $expected) { throw 'Published download checksum mismatch' }
           Expand-Archive $download (Join-Path $env:RUNNER_TEMP 'verified-download')
           "Verified download: $url`nSHA256: $expected`nSource: $source" >> $env:GITHUB_STEP_SUMMARY

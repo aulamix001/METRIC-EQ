@@ -9,8 +9,11 @@ try {
  if ((Get-FileHash pluginval.zip).Hash.ToLower() -ne 'c08e61ce3b96db41636f8ec7e76f4c7e2c13ebdac7fa1b5a1f52b4f32ec715ab') { throw 'pluginval checksum mismatch' }
  Expand-Archive pluginval.zip pluginval -Force
  New-Item -ItemType Directory -Force build-windows/pluginval-logs | Out-Null
- $plugin = (Resolve-Path 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3').Path
- $logs = (Resolve-Path 'build-windows/pluginval-logs').Path
+ $plugins = @((Resolve-Path 'build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3').Path, (Resolve-Path 'build-windows/CHiMetricMatchPro_artefacts/Release/VST2/CHi Metric Match Pro.dll').Path)
+ foreach($plugin in $plugins) {
+ $format = if ($plugin.EndsWith('.dll')) {'VST2'} else {'VST3'}
+ $logDirectory = New-Item -ItemType Directory -Force (Join-Path 'build-windows/pluginval-logs' $format)
+ $logs = $logDirectory.FullName
  # pluginval is a Windows GUI executable. PowerShell's direct invocation may
  # return before it exits; never read a stale/null LASTEXITCODE for this app.
  $info = [Diagnostics.ProcessStartInfo]::new()
@@ -39,4 +42,5 @@ try {
   if ($process.ExitCode -ne 0) { throw 'pluginval failed; publication blocked' }
   if ($outputText -notmatch '(?m)^SUCCESS\s*$') { throw 'pluginval did not confirm completed validation' }
  } finally { $process.Dispose() }
+ }
 } finally { Pop-Location }

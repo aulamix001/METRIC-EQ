@@ -1,62 +1,34 @@
-# Auditoria funcional e de automação
+# Auditoria 0.2.0 — interface e processamento reais
 
-## Resultado
+A versão 0.1 era apenas uma fundação com Bypass. Na 0.2, o editor anterior foi substituído e o comparador possui player, análise e monitoração reais. A captura `plugin-v02.png` vem do editor compilado, com sinais de calibração processados; não é o mockup.
 
-**Este código é somente a Fase 1. A imagem conceitual gerada na conversa NÃO corresponde à interface compilada. Os comandos do manual e da proposta visual ainda não estão implementados.**
+## Implementado e testado
 
-O inventário executado com `CHiTests --inventory` encontra exatamente **um parâmetro de host: `bypass`**. Não há biblioteca de referências, caminho B, FFT nem engine EQ Match no código atual. Um build aprovado ou um download íntegro não certifica funções ausentes.
+- Isolamento A/B (não soma permanente), crossfade, ganho suavizado e bypass seco.
+- Player RAM em worker próprio, biblioteca de 16 slots, leitura fora do áudio, resampling linear, cues e estado com caminhos dos arquivos.
+- Monitoração Stereo/Mono/L/R/Sides e Solo In Place.
+- Filtros IIR estáveis de monitoração, transição de bancos, todas as inclinações/regiões, rejeição de valores não finitos.
+- FIFO SPSC entre áudio/editor, FFT Hann fora do callback, magnitude calibrada, média de potência, hold e views independentes por página.
+- Correlação e balanço L/R por frequência; histórico de crest factor. Os controles sem efeito nesses modos são desabilitados, em vez de se apresentarem como funcionais.
+- Editor com faders, medidores segmentados, botão circular, cabeçalho/abas, gráfico central, controles e quatro colunas de referências.
+- VST3 e adaptador de interoperabilidade VST2.4 independente. O adaptador legado tem fábrica, áudio, estado, automação e janela próprios. Não é um VST3 renomeado.
 
-## Comandos reais
+## Automação
 
-| Recurso | Situação | Evidência |
-|---|---|---|
-| Passagem de áudio mono/estéreo | Implementado | 160 casos sintéticos com comparação exata de samples |
-| Bypass | Implementado; ativo e bypass são idênticos nesta fase sem DSP | GUI, automação e callback de bypass do host testados |
-| Salvar/restaurar estado | Implementado para bypass | 20 round trips e rejeição de estado inválido |
-| Redimensionar editor | Implementado | 50 aberturas/fechamentos, tamanhos inicial e extremos |
-| Identificação do botão para o host | Corrigida nesta auditoria | `getControlParameterIndex` retorna o índice de bypass somente para esse botão |
+`CHiTests --inventory` enumera 37 parâmetros reais. Bypass conserva o ID persistente `bypass`, índice 0, padrão 0, dois estados. Ganhos A/B: -18 a +18 dB. AB é booleano; seleção de referência/cue/monitor são parâmetros de escolha.
 
-## Mapeamento implementado
+Os testes verificam os valores normalizados do manual:
 
-| ID persistente | Nome | Índice | Valor normalizado | Padrão | Passos | Automatizável |
-|---|---|---:|---|---:|---:|---|
-| bypass | Bypass | 0 | 0 = desligado, 1 = ligado | 0 | 2 | Sim |
+- Referências 1–16: 1, 8, 15, 20, 25, 35, 40, 48, 54, 58, 64, 70, 77, 86, 92, 100%.
+- Cues 1–4: 1, 30, 60, 100%.
+- Stereo/Mono/L/R/Sides: 1, 30, 50, 80, 100%.
 
-O teste `parameter_mapping` verifica a identidade do parâmetro, vínculo de host, GUI → parâmetro, notificação com início/fim do gesto, automação → GUI e restauração de estado → GUI. Componentes sem parâmetro retornam -1. A capacidade de MIDI direto permanece desativada.
+O arredondamento dos parâmetros de escolha foi definido explicitamente para que 70% selecione a referência 12, sem a ambiguidade de arredondamento para par. Existem cinco parâmetros de view por página, em vez de uma escolha compartilhada que se perca ao trocar de aba.
 
-## Comandos do manual sem implementação/mapeamento
+## Limitações — sem certificação de funções ausentes
 
-| Grupo solicitado | Situação real |
-|---|---|
-| Faders A/B ±18 dB e ganho por referência | Ausentes |
-| Alternância A/B, transição e fonte B | Ausentes |
-| Biblioteca de 16 referências, drag/drop, codecs, Disk/RAM | Ausentes |
-| Play/Pause, Rewind, Latch/Cue/Sync/Manual | Ausentes |
-| Cues 1–4, edição e exclusão | Ausentes |
-| Loop, deslocamento, 1/2, 2x e marcadores | Ausentes |
-| Sync Offset individual/global, PDC e Listen A+B | Ausentes |
-| Stereo/Mono/L/R/Sides e Solo In Place | Ausentes |
-| Filtros LOW/HIGH, slope, modos, presets e Spot | Ausentes |
-| Zoom, LINK e edição de filtros no gráfico | Ausentes |
-| Single/Dual/Layered e preferências por página | Ausentes |
-| Spectrum, Correlation, Stereo Image, Dynamics | Ausentes |
-| Peak/RMS/LUFS/True Peak e históricos | Ausentes |
-| Loudness Match Single/All e seus quatro modos | Ausentes |
-| EQ Match e captura de perfis | Ausentes |
-| Compact UI, tamanhos discretos, Settings e padrões | Ausentes; existe somente redimensionamento contínuo |
-| Presets nomeados, arquivo portátil e busca de áudios ausentes | Ausentes; existe somente o estado APVTS de bypass |
+Não implementados: LUFS, True Peak, PSR, Loudness Match, EQ Match, streaming por disco, ganho por referência, loop de região, Sync Offset/PDC, compact UI, presets em arquivo/arquivo portátil, banco de defaults do usuário e relink assistido completo. As abas Loudness e EQ Match estão desabilitadas com explicação. Correlation/Stereo nesta etapa mostram a média, sem todo o sistema Range/Hold do manual. Dynamics mostra crest factor, não PSR.
 
-Não é possível certificar esses comandos como funcionais nem verificar seus percentuais no binário atual, pois os parâmetros não existem. Os campos da proposta visual não são botões clicáveis do plugin.
+O limite de RAM é 256 MB por instância, incluindo versões retidas até a destruição. Isso garante que a thread de áudio não seja responsável por liberar arquivos enquanto o worker publica referências. Slots cancelados têm revisão de carregamento para impedir que um decoder atrasado ressuscite um arquivo removido. Arquivos ausentes produzem status de erro, não áudio fictício.
 
-## Valores de seleção solicitados (requisitos futuros, NÃO implementados)
-
-- Monitoração: Stereo 1%, Mono 30%, L 50%, R 80%, Sides 100%. O S de Solo In Place é um modificador separado.
-- Cues 1–4: 1%, 30%, 60%, 100%.
-- Referências 1–16: 1%, 8%, 15%, 20%, 25%, 35%, 40%, 48%, 54%, 58%, 64%, 70%, 77%, 86%, 92%, 100%.
-- Cues/referências usam valores High e Low iguais; os percentuais são exemplos de seleção, não fronteiras exatas entre faixas normalizadas.
-
-## Publicação auditável
-
-O pacote Windows inclui este relatório e `BUILD-INFO.json` com o SHA do código-fonte, inventário de parâmetros e SHA256 do binário. O pipeline só empacota depois de CTest em Release/Debug e pluginval 1.0.4 nível 5. Verifica PE x64 e extração do ZIP, publica e baixa o arquivo novamente para comparar o SHA256. A branch `windows-downloads` é atualizada sem reescrever o histórico. Downloads por SHA de commit identificam um pacote imutável.
-
-Essas verificações não substituem a execução no Studio One 8 ou REAPER 7. A compatibilidade nessas DAWs, desempenho em sessão, latência perceptível e estabilidade de longa duração permanecem sem teste.
+O resampling do player é linear; não é um SRC mastering de banda limitada. VST2 é estéreo 2-in/2-out; VST3 aceita mono/estéreo. Os dois formatos precisam de testes em DAWs reais, além de pluginval. Não há alegação de certificação no Studio One/REAPER, consumo máximo de CPU medido ou implementação integral do manual.

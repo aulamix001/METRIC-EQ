@@ -1,79 +1,69 @@
-# CHi Metric Match Pro
+# CHi Metric Match Pro 0.2.0
 
-Implementação original de CHi Audio, com referência funcional no ADPTR Metric AB.
+Comparador de referências de áudio em C++20/JUCE 8, com interface real redesenhada a partir da proposta aprovada. Este projeto usa implementação original e identidade CHi Audio.
 
-## Auditoria: somente Fase 1
+![Editor compilado com sinais de calibração processados](docs/plugin-v02.png)
 
-**A imagem conceitual criada na conversa não é a interface compilada. O único comando de automação implementado é Bypass. Consulte [AUDIT.md](docs/AUDIT.md) antes de baixar.**
+A imagem acima é renderizada pelo editor compilado, alimentado com sinais de calibração reais do teste. Não é a proposta gerada por IA. Em uma sessão sem áudio, os medidores e espectros ficam vazios.
 
-## Estado: Fase 1
+## O que funciona nesta versão
 
-Fundação C++20/JUCE 8.0.12: plugin VST3 mono/estéreo, passagem de áudio em ganho unitário, parâmetro de bypass automatizável, serialização APVTS e editor vetorial redimensionável de 1200 × 720. Como ainda não há processamento, áudio ativo e bypass são idênticos. Nenhum controle de recurso futuro é apresentado como funcional.
+- Interface HiDPI redimensionável: painel de medição A/B, faders, botão circular, abas e 16 slots de referência em quatro colunas.
+- Carregamento assíncrono de WAV/AIFF/FLAC em RAM; arquivos mono/estéreo. Caminhos e quatro cues por referência salvos no estado.
+- Monitoração exclusiva A (mix da DAW) ou B (referência), com crossfade de 10 ms. B continua sendo analisado ao ouvir A.
+- Play/Pause, Rewind, loop da faixa completa e modos Manual/Latch/Cue/Sync básico. Shift+clique seleciona referência mantendo A. Clique no nome ativo alterna A/B.
+- Ganhos A/B de ±18 dB, com suavização. Duplo clique nos faders restaura 0 dB.
+- Stereo, Mono, Left, Right, Sides e Solo In Place.
+- Filtros de monitoração abaixo/dentro/acima da faixa, 12/24/36/48 dB por oitava, presets e edição Spot no gráfico. Zoom dB/Hz ajustável.
+- FFT Hann 2048–32768, magnitude calibrada em dBFS, média temporal, peak hold, freeze e views Single/Dual/Layered independentes por página.
+- Correlação por frequência, balanço estéreo por frequência e histórico de **crest factor Peak/RMS**. Esta versão não chama crest factor de PSR.
+- 37 parâmetros de automação, estado APVTS e identificação dos controles para o host.
+- VST3 e adaptador independente compatível com VST2.4, baseado em header de interoperabilidade BSD. São binários diferentes, não arquivos renomeados.
 
-Ainda **não** implementados: A/B com arquivos, FFT, EQ Match, loudness, correlação, imagem estéreo, dinâmica e biblioteca. Não é ainda um substituto funcional do Metric AB. O próximo marco é a Fase 2 do briefing.
+## Limitações explícitas
 
-## Estrutura
+LUFS/True Peak/PSR e EQ Match ainda não estão implementados; suas abas ficam desabilitadas. Também pendentes: disk streaming, ganhos individuais por referência, loop com limites editáveis, PDC, offsets Sync globais, compact UI, arquivo de presets e assistente de arquivos ausentes completo. Não é ainda uma reprodução integral do manual.
 
-- `Source/PluginProcessor.*`: buses, áudio, bypass e estado.
-- `Source/PluginEditor.*`: interface original e controle de bypass.
-- `Tests/DSPTests.cpp`: áudio e persistência de estado.
-- `scripts/build-windows.ps1`: build, testes e instalação opcional.
+Referências usam orçamento total de RAM de 256 MB por instância, incluindo versões substituídas, retidas até o fechamento para evitar liberar memória na thread de áudio. Ao atingir o limite, o carregamento é rejeitado com mensagem. Use trechos de referência ou reabra a instância para liberar esse orçamento. Não há leitura de disco, FFT, alocação ou mutex de biblioteca no callback de áudio.
 
-## Windows 11 / Visual Studio 2022
+O VST3 aceita mono e estéreo. O adaptador VST2 usa duas entradas e duas saídas e não declara processamento double. Studio One/REAPER não foram usados neste executor; pluginval é uma validação distinta.
 
-Instale Visual Studio 2022 com Desktop development with C++, Windows SDK, CMake ≥3.22 e Git. Em PowerShell:
+## Downloads e instalação no Windows
+
+Pacotes são publicados em [Releases](https://github.com/aulamix001/METRIC-EQ/releases) e na [branch windows-downloads](https://github.com/aulamix001/METRIC-EQ/tree/windows-downloads) somente após testes. Confira `BUILD-INFO.json`: deve indicar versão **0.2.0** e 37 parâmetros; a versão 0.1 tinha apenas Bypass e a tela de fundação.
+
+- `CHi-Metric-Match-Pro-VST3-Windows-x64.zip`: copie a pasta completa `CHi Metric Match Pro.vst3` para sua pasta VST3.
+- `CHi-Metric-Match-Pro-VST2-Windows-x64.zip`: copie `CHi Metric Match Pro.dll` para uma pasta VST2 configurada na DAW.
+- `CHi-Metric-Match-Pro-Windows-x64.zip`: contém os dois formatos e documentação.
+
+Feche a DAW antes de atualizar, preserve uma cópia da versão anterior e faça nova varredura dos plugins. A janela nova mostra **0.2** no canto superior. Não substitua um arquivo carregado por um processo em execução. Os binários não são assinados.
+
+Use `Get-FileHash .\nome-do-pacote.zip -Algorithm SHA256` e compare com `SHA256SUMS.txt`. O pipeline valida PE x64, ZIP e download após publicação.
+
+## Uso
+
+1. Insira no master após os processadores da mix.
+2. Arraste arquivos para os slots ou clique em um slot vazio. O menu `=` permite carregar, localizar, remover e limpar cues.
+3. Em Latch, use o transporte da DAW; em Manual, use `>` para a referência. O botão circular alterna A/B.
+4. Use Playback para visualizar a forma de onda e criar cues 1–4. Clique na forma de onda para seek; roda para zoom; arraste na visão geral para reposicionar.
+5. Use Spectrum para comparar curvas, filtros e médias. Botão direito no gráfico alterna filtros; Alt+clique restaura a faixa inteira.
+6. As medições de Peak/RMS são reais; clique nas leituras para reiniciar seus máximos. Duplo clique na escala central alterna 48/18 dB.
+
+## Build
+
+Windows: Visual Studio 2022 x64, CMake ≥3.22 e Git.
 
 ```powershell
 ./scripts/build-windows.ps1 -Configuration Release
 ./scripts/build-windows.ps1 -Configuration Debug
+./scripts/validate-windows.ps1
+./scripts/package-windows.ps1
 ```
 
-O script baixa JUCE pelo CMake, compila x64 e executa CTest. Artefato: `build-windows/CHiMetricMatchPro_artefacts/Release/VST3/CHi Metric Match Pro.vst3`.
+CMake gera VST3 e VST2 por padrão. `-DCHI_BUILD_LEGACY=OFF` desativa o adaptador VST2. Ele não depende do SDK Steinberg: veja [origem e licença BSD](ThirdParty/LegacyABI/ORIGIN.md).
 
-Use `-Install` somente para solicitar instalação explícita. O script pede confirmação e não sobrescreve um plugin existente. Abra um PowerShell com permissões apropriadas se a pasta Common Files exigir administrador. A instalação não é feita automaticamente.
+Neste executor Linux: `./scripts/build-cloud.sh Release` e `./scripts/build-cloud.sh Debug`. Os auxiliares usam JUCE em `/workspace/deps/JUCE` e ferramentas/dependências locais em `/workspace/tools`. Instalações Linux convencionais podem usar CMake/Ninja diretamente com dependências ALSA, FreeType, Fontconfig e X11.
 
-## Linux
+## Validação e licenças
 
-Requer compilador C++20, CMake, Ninja, pkg-config, desenvolvimento ALSA, FreeType, Fontconfig e X11. Com dependências disponíveis:
-
-```sh
-cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
-cmake --build build-release --parallel 2
-ctest --test-dir build-release --output-on-failure
-```
-
-Para reutilizar um checkout local de JUCE, adicione `-DFETCHCONTENT_SOURCE_DIR_JUCE=/caminho/JUCE`. Repita com `build-debug` e `Debug`.
-
-Neste executor de nuvem, as dependências foram extraídas localmente em `/workspace/tools/sysroot`, sem instalação no sistema. Use `./scripts/build-cloud.sh Release` ou `./scripts/build-cloud.sh Debug`; esse auxiliar exige o checkout JUCE em `/workspace/deps/JUCE` e o ambiente Python de ferramentas em `/workspace/tools/build`. O procedimento Linux genérico acima serve para outras máquinas com dependências instaladas.
-
-## Validação e limites
-
-Os testes verificam preservação exata de silêncio, impulso, senoide de 1 kHz e estéreo invertido em 5 sample rates, buffers 32/2048, mono/estéreo e bypass ativo/inativo (160 casos), além de 20 restaurações de estado e entrada de estado inválida. Há também testes de mapeamento bidirecional GUI/host, gestos de automação, 50 ciclos de editor/redimensionamento, independência entre instâncias, callbacks de bypass do host e mudanças de sample rate. `CHiTests --inventory` imprime o inventário real de parâmetros em JSON.
-
-Não substituem testes de integração em DAW ou stress de longa duração. O pipeline Windows executa pluginval 1.0.4 nível 5 antes de publicar.
-
-A compilação Windows é verificada no workflow; Studio One 8 e REAPER 7 ainda exigem testes nas respectivas DAWs. Um build Linux não gera um VST3 Windows.
-
-## Uso inicial
-
-Insira como efeito em uma faixa mono ou estéreo. A saída preserva a entrada. BYPASS é automatizável e salvo com a sessão. Nenhum áudio de referência é carregado nesta fase.
-
-## Licenciamento
-
-JUCE possui termos AGPLv3/comerciais próprios; revise `JUCE/LICENSE.md` antes de distribuir. A ausência de dependências comerciais obrigatórias não implica autorização para distribuir um produto fechado sem atender à licença JUCE. Nenhum código, marca ou asset proprietário da ADPTR é incluído.
-
-## Download Windows
-
-[Baixar o build auditado Windows x64](https://raw.githubusercontent.com/aulamix001/METRIC-EQ/7d182ebf5b8518a9a391cb93f27787777bb50c8d/CHi-Metric-Match-Pro-Windows-x64.zip) · [Comprovante, hashes e limites](docs/BUILD-RECEIPT.md). Este pacote é somente a fundação, com Bypass como único parâmetro.
-
-O workflow [Windows VST3](https://github.com/aulamix001/METRIC-EQ/actions/workflows/windows-vst3.yml) compila Release e Debug no Windows Server 2022 x64, executa os testes e publica uma pré-release somente após validar o pacote. Consulte as [Releases](https://github.com/aulamix001/METRIC-EQ/releases) e a conclusão do workflow: a presença deste texto não confirma que um build remoto já terminou.
-
-Baixe `CHi-Metric-Match-Pro-Windows-x64.zip` e `SHA256SUMS.txt` da mesma release. Compare `Get-FileHash .\CHi-Metric-Match-Pro-Windows-x64.zip -Algorithm SHA256` com o hash publicado. Extraia o ZIP e copie a pasta completa `CHi Metric Match Pro.vst3` para `C:\Program Files\Common Files\VST3\CHi Audio\`, sem substituir versões existentes. O binário não é assinado. A funcionalidade entregue ainda é a Fase 1.
-
-O pipeline inclui `AUDIT.md`, `BUILD-INFO.json`, testa o ZIP e baixa o pacote publicado para comparar seu SHA256. A branch [windows-downloads](https://github.com/aulamix001/METRIC-EQ/tree/windows-downloads) oferece o download mesmo quando GitHub Releases estiver indisponível. Isso verifica a integridade naquela execução; não garante disponibilidade futura do GitHub ou compatibilidade com todas as DAWs.
-
-## Interface atual
-
-Renderização do editor JUCE real em Linux; não é uma captura dentro do Studio One.
-
-![Interface da Fase 1](docs/plugin-phase1.png)
+Veja [VALIDATION.md](VALIDATION.md) e [AUDIT.md](docs/AUDIT.md). O pipeline executa seis suítes em Release/Debug e pluginval nível 5 nos dois formatos antes de publicar. JUCE possui termos AGPLv3/comerciais próprios; a licença BSD do header legado é distribuída com o pacote e não substitui os termos JUCE. Nenhum código, marca ou recurso gráfico da ADPTR é incluído.
