@@ -1,8 +1,9 @@
 {
-  "sourceCommit": "c6ed14f2ec08b44868425c5e493e9b0f0d6d2a25",
+  "version": "0.2.0",
+  "sourceCommit": "b54095ed49cd284ec454074ac1c4888e36c67fab",
   "platform": "Windows x64",
   "configuration": "Release",
-  "productStage": "Foundation only: no reference player, analysis or EQ Match",
+  "productStage": "Reference comparison: real editor, A/B RAM player, FFT, filters, monitors; advanced mastering features pending",
   "parameters": [
     {
       "id": "bypass",
@@ -11,13 +12,305 @@
       "automatable": true,
       "steps": 2,
       "defaultNormalized": 0.0
+    },
+    {
+      "id": "ab",
+      "name": "Monitor B",
+      "index": 1,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "playing",
+      "name": "Reference Play",
+      "index": 2,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "loop",
+      "name": "Reference Loop",
+      "index": 3,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "solo",
+      "name": "Solo In Place",
+      "index": 4,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "filters",
+      "name": "Filters",
+      "index": 5,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "gainA",
+      "name": "A Stream Gain",
+      "index": 6,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.5
+    },
+    {
+      "id": "gainB",
+      "name": "B Stream Gain",
+      "index": 7,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.5
+    },
+    {
+      "id": "reference",
+      "name": "Selected Reference",
+      "index": 8,
+      "automatable": true,
+      "steps": 16,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "stereo",
+      "name": "Stereo Mode",
+      "index": 9,
+      "automatable": true,
+      "steps": 5,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "playMode",
+      "name": "Playback Mode",
+      "index": 10,
+      "automatable": true,
+      "steps": 4,
+      "defaultNormalized": 0.333333343267441
+    },
+    {
+      "id": "cue",
+      "name": "Selected Cue",
+      "index": 11,
+      "automatable": true,
+      "steps": 4,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "tab",
+      "name": "Selected Page",
+      "index": 12,
+      "automatable": true,
+      "steps": 5,
+      "defaultNormalized": 0.25
+    },
+    {
+      "id": "viewPlayback",
+      "name": "viewPlayback",
+      "index": 13,
+      "automatable": true,
+      "steps": 3,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "viewSpectrum",
+      "name": "viewSpectrum",
+      "index": 14,
+      "automatable": true,
+      "steps": 3,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "viewCorrelation",
+      "name": "viewCorrelation",
+      "index": 15,
+      "automatable": true,
+      "steps": 3,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "viewStereo",
+      "name": "viewStereo",
+      "index": 16,
+      "automatable": true,
+      "steps": 3,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "viewDynamics",
+      "name": "viewDynamics",
+      "index": 17,
+      "automatable": true,
+      "steps": 3,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "zoomDb",
+      "name": "Zoom dB",
+      "index": 18,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "zoomHz",
+      "name": "Zoom Hz",
+      "index": 19,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "meterZoom",
+      "name": "Meter Zoom",
+      "index": 20,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "zoomLow",
+      "name": "Zoom Low Hz",
+      "index": 21,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "zoomHigh",
+      "name": "Zoom High Hz",
+      "index": 22,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "peakDecay",
+      "name": "Peak Decay dB per Second",
+      "index": 23,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.392405062913895
+    },
+    {
+      "id": "filterMode",
+      "name": "Filter Region",
+      "index": 24,
+      "automatable": true,
+      "steps": 3,
+      "defaultNormalized": 0.5
+    },
+    {
+      "id": "slope",
+      "name": "Filter Slope",
+      "index": 25,
+      "automatable": true,
+      "steps": 4,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "low",
+      "name": "Filter Low",
+      "index": 26,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.174211546778679
+    },
+    {
+      "id": "high",
+      "name": "Filter High",
+      "index": 27,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.282909989356995
+    },
+    {
+      "id": "fft",
+      "name": "FFT Size",
+      "index": 28,
+      "automatable": true,
+      "steps": 5,
+      "defaultNormalized": 0.5
+    },
+    {
+      "id": "freeze",
+      "name": "Freeze Analysis",
+      "index": 29,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 0.0
+    },
+    {
+      "id": "peak",
+      "name": "Peak",
+      "index": 30,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "average",
+      "name": "Average",
+      "index": 31,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "hold",
+      "name": "Hold",
+      "index": 32,
+      "automatable": true,
+      "steps": 2,
+      "defaultNormalized": 1.0
+    },
+    {
+      "id": "holdTime",
+      "name": "Peak Hold Seconds",
+      "index": 33,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.100000001490116
+    },
+    {
+      "id": "averageTime",
+      "name": "Average Milliseconds",
+      "index": 34,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.25
+    },
+    {
+      "id": "dbTop",
+      "name": "Graph Top dB",
+      "index": 35,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.600000023841858
+    },
+    {
+      "id": "dbBottom",
+      "name": "Graph Bottom dB",
+      "index": 36,
+      "automatable": true,
+      "steps": 2147483647,
+      "defaultNormalized": 0.444444447755814
     }
   ],
-  "binarySha256": "80c55683d608e840e1de5b5d944c0d7bd6c65299fca90e8642f6a2e1fa00f5f7",
+  "binarySha256": "1ad0d1f0d8b48f34ae320a06a5db7a77bce9a2ec2a4416946d4892e0d2abb34e",
+  "vst2Sha256": "dead50d4039657565095a634654003a39f65af04ce9e76c8dea19ebe82067aed",
   "automatedTests": [
     "foundation",
     "parameter_mapping",
-    "lifecycle"
+    "lifecycle",
+    "reference_playback",
+    "monitor_filters",
+    "spectrum_calibration"
   ],
-  "pluginval": "1.0.4, strictness 5; see workflow logs"
+  "pluginval": "1.0.4 strictness 5, VST3 and VST2-compatible adapter"
 }
