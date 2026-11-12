@@ -64,6 +64,8 @@ JUCE possui termos AGPLv3/comerciais próprios; revise `JUCE/LICENSE.md` antes d
 
 ## Download Windows
 
+[Baixar o build auditado Windows x64](https://raw.githubusercontent.com/aulamix001/METRIC-EQ/7d182ebf5b8518a9a391cb93f27787777bb50c8d/CHi-Metric-Match-Pro-Windows-x64.zip) · [Comprovante, hashes e limites](docs/BUILD-RECEIPT.md). Este pacote é somente a fundação, com Bypass como único parâmetro.
+
 O workflow [Windows VST3](https://github.com/aulamix001/METRIC-EQ/actions/workflows/windows-vst3.yml) compila Release e Debug no Windows Server 2022 x64, executa os testes e publica uma pré-release somente após validar o pacote. Consulte as [Releases](https://github.com/aulamix001/METRIC-EQ/releases) e a conclusão do workflow: a presença deste texto não confirma que um build remoto já terminou.
 
 Baixe `CHi-Metric-Match-Pro-Windows-x64.zip` e `SHA256SUMS.txt` da mesma release. Compare `Get-FileHash .\CHi-Metric-Match-Pro-Windows-x64.zip -Algorithm SHA256` com o hash publicado. Extraia o ZIP e copie a pasta completa `CHi Metric Match Pro.vst3` para `C:\Program Files\Common Files\VST3\CHi Audio\`, sem substituir versões existentes. O binário não é assinado. A funcionalidade entregue ainda é a Fase 1.
